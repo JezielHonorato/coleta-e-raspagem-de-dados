@@ -110,6 +110,7 @@ def restcountries_api():
             )
             response.raise_for_status()
 
+            # {'data': {'objects': [{'names': {'translations': {'por': {'common': 'Abecásia'}}}, '_meta': {'lastUpdatedTimestamp': 1788557516}}, ...],
             resposta_json = response.json()
             paises = resposta_json.get("data", {}).get("objects", [])
 
