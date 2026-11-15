@@ -1,7 +1,11 @@
+import os
 import csv
 import json
 import requests
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
+
+load_dotenv()
 
 headers = {
     # https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/User-Agent/Firefox
@@ -80,4 +84,64 @@ def scrape_wikipedia_pib(
         print("Tabela não encontrada na página.")
 
 
-scrape_wikipedia_pib(save_file="pib_paises", extension="csv")
+def restcountries_api():
+    base_url = "https://api.restcountries.com/countries/v5"
+    response_fields = "names.translations.por.common,population,area"
+    limit = 100  # Limite max da API (default = 25)
+    total_paginas = 3
+
+    todos_paises = []
+
+    print("Consultando a API em páginas...")
+
+    for pagina in range(total_paginas):
+        offset = pagina * limit
+        url = f"{base_url}?response_fields={response_fields}&limit={limit}&offset={offset}"
+
+        try:
+            print(f"Buscando página {pagina + 1} (offset={offset})...")
+            response = requests.get(
+                url,
+                headers={
+                    "Authorization": os.getenv(
+                        "RESTCOUNTRIES_API", "Bearer rc_live_demo"
+                    )
+                },
+            )
+            response.raise_for_status()
+
+            resposta_json = response.json()
+            paises = resposta_json.get("data", {}).get("objects", [])
+
+            todos_paises.extend(paises)
+
+        except requests.exceptions.RequestException as e:
+            print(f"Erro ao acessar a API na página {pagina + 1}: {e}")
+            break
+
+    filename = "paises_populacao_area.csv"
+
+    with open(filename, mode="w", newline="", encoding="utf-8") as arquivo_csv:
+        writer = csv.writer(arquivo_csv)
+        writer.writerow(["pais", "populacao", "area_km2"])
+
+        for pais in todos_paises:
+            if not isinstance(pais, dict):
+                continue
+
+            nome = (
+                pais.get("names", {})
+                .get("translations", {})
+                .get("por", {})
+                .get("common", "Desconhecido")
+            )
+            populacao = pais.get("population", 0)
+            area = pais.get("kilometers", 0)
+
+            writer.writerow([nome, populacao, area])
+
+    print(f"O arquivo '{filename}' foi gerado com sucesso")
+
+
+# scrape_wikipedia_pib(save_file="pib_paises", extension="csv")
+# restcountries_api()
