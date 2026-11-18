@@ -1,0 +1,11 @@
+# Variaveis de ambiente (chaves de API)
+.env
+
+# Cache Python
+__pycache__/
+*.pyc
+
+# Ambientes virtuais
+.venv/
+env/
+venv/
